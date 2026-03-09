@@ -305,7 +305,7 @@ def main():
     if args.settings:
         settings_files = [root / s.strip() for s in args.settings.split(",")]
     else:
-        settings_files = [s for s in root.rglob("settings*.py")
+        settings_files = [s for s in root.rglob("settings.py")
                           if "migration" not in str(s)]
         info(f"Auto-detected settings: {[str(s) for s in settings_files]}")
 

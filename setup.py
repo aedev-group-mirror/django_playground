@@ -87,7 +87,7 @@ setup_kwargs = {
     },
     'python_requires': '>=3.12',
     'url': 'https://gitlab.com/aedev-group/django_playground',
-    'version': '0.3.2',
+    'version': '0.3.3',
     'zip_safe': False,
 }
 
