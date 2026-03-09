@@ -104,11 +104,11 @@ def check_filer_references(conn: sqlite3.Connection):
     banner("Filer image references")
     cur = conn.cursor()
 
-    # Bootstrap4Picture → filer_image
+    # Bootstrap4Picture → filer_image - ae: fixed/corrected (SELECT id FROM filer_image)
     cur.execute("""
         SELECT COUNT(*) FROM bootstrap4_picture_bootstrap4picture
         WHERE picture_id IS NOT NULL
-          AND picture_id NOT IN (SELECT id FROM filer_image)
+          AND picture_id NOT IN (SELECT file_ptr_id FROM filer_image)
     """)
     broken = cur.fetchone()[0]
     if broken:

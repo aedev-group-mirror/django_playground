@@ -213,7 +213,7 @@ def main():
     if args.settings:
         settings_files = [root / s.strip() for s in args.settings.split(",")]
     else:
-        settings_files = list(root.rglob("settings*.py"))
+        settings_files = list(root.rglob("settings.py"))
         settings_files = [s for s in settings_files
                           if "migration" not in str(s)]
         if settings_files:
