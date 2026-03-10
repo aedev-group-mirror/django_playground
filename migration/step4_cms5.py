@@ -47,9 +47,10 @@ REQUIREMENTS_UPDATES = {
     "django-mptt":                 "==0.16.0",
     "django-polymorphic":          "==3.1.0",
     "djangocms-versioning":        "==2.3.0",
-    "djangocms-admin-style":       "==4.1.0",
+    "djangocms-admin-style":       "==3.3.1",
     "djangocms-attributes-field":  "==3.0.0",
     "djangocms-text":              "==0.8.0",
+    "djangocms-frontend":          ">=2.0.0",    # replaces djangocms-bootstrap4
     "djangocms-file":              "==4.1.0",
     "djangocms-googlemap":         "==3.1.0",
     "djangocms-icon":              "==3.1.0",
@@ -179,8 +180,7 @@ def patch_cms5_settings(settings_files: list[Path]):
         # CMS_CONFIRM_VERSION_4 was a temporary flag in CMS 4.0
         if "CMS_CONFIRM_VERSION_4" in content:
             replace_in_file(
-                sf,
-                "CMS_CONFIRM_VERSION_4",
+                sf, "CMS_CONFIRM_VERSION_4",
                 "# CMS_CONFIRM_VERSION_4  # No longer needed in CMS 5")
             ok(f"  {sf.name}: commented out CMS_CONFIRM_VERSION_4")
 
@@ -279,7 +279,7 @@ def main():
     if args.settings:
         settings_files = [root / s.strip() for s in args.settings.split(",")]
     else:
-        settings_files = [s for s in root.rglob("settings*.py")
+        settings_files = [s for s in root.rglob("settings.py")
                           if "migration" not in str(s)]
 
     backup_sqlite(root / args.db, label="pre_step4_cms5")

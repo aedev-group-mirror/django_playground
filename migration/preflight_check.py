@@ -180,7 +180,7 @@ def scan_deprecated_apis(root: Path, report: dict):
 
 def check_cms_config(root: Path, report: dict):
     banner("CMS configuration")
-    settings_files = [s for s in root.rglob("settings*.py")
+    settings_files = [s for s in root.rglob("settings.py")
                       if "migration" not in str(s)]
 
     cms_config = {}
