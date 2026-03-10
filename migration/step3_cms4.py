@@ -48,9 +48,10 @@ REQUIREMENTS_UPDATES = {
     "django-mptt":                 "==0.16.0",
     "django-polymorphic":          "==3.1.0",
     "djangocms-versioning":        "==2.1.0",    # NEW — required by CMS 4
-    "djangocms-admin-style":       "==4.0.0",
+    "djangocms-admin-style":       "==3.3.1",
     "djangocms-attributes-field":  "==3.0.0",
     "djangocms-text":              "==0.6.0",    # replaces djangocms-text-ckeditor
+    "djangocms-frontend":          ">=2.0.0",    # replaces djangocms-bootstrap4
     "djangocms-file":              "==4.0.0",
     "djangocms-googlemap":         "==3.0.0",
     "djangocms-icon":              "==3.0.0",
@@ -70,14 +71,18 @@ REQUIREMENTS_UPDATES = {
 
 REMOVALS = [
     "djangocms-text-ckeditor",   # replaced by djangocms-text
-    "djangocms-bootstrap4",      # incompatible with CMS 4 — see migration report
+    # djangocms-bootstrap4 is kept installed temporarily during this step so
+    # that djangocms-frontend can read its data during the migration command.
+    # It is uninstalled by step3_kairos_bootstrap4_migrate.py --mode frontend
+    # AFTER the migration has completed successfully.
 ]
 
 ADDITIONS = [
     "djangocms-versioning==2.1.0",
     "djangocms-text==0.6.0",
+    "djangocms-frontend>=2.0.0",
+    "# NOTE: djangocms-bootstrap4 removed AFTER running step3_kairos_bootstrap4_migrate.py",
     "# NOTE: pytz kept intentionally — remove in step5_django52.py only",
-    "# NOTE: djangocms-bootstrap4 removed — see cms4_bootstrap4_migration.txt",
 ]
 
 
@@ -102,8 +107,10 @@ def patch_installed_apps(settings_files: list[Path]):
             )
         if "djangocms_bootstrap4" in content:
             issues.append(
-                f"  REMOVE  'djangocms_bootstrap4'  "
-                f"(see cms4_bootstrap4_migration.txt for your options)"
+                f"  KEEP    'djangocms_bootstrap4' temporarily (needed by frontend migration)\n"
+                f"  ADD     'djangocms_frontend'  ← add AFTER 'djangocms_bootstrap4'\n"
+                f"  REMOVE  'djangocms_bootstrap4' only AFTER running:\n"
+                f"          python step3_kairos_bootstrap4_migrate.py --mode frontend"
             )
         if "djangocms_versioning" not in content:
             issues.append(
@@ -138,8 +145,7 @@ def patch_cms_settings(settings_files: list[Path]):
         # CMS_TOOLBAR_ANONYMOUS_ON removed
         if "CMS_TOOLBAR_ANONYMOUS_ON" in content:
             replace_in_file(
-                sf,
-                "CMS_TOOLBAR_ANONYMOUS_ON",
+                sf, "CMS_TOOLBAR_ANONYMOUS_ON",
                 "# CMS_TOOLBAR_ANONYMOUS_ON  # REMOVED in CMS 4")
             ok(f"  {sf.name}: commented out CMS_TOOLBAR_ANONYMOUS_ON")
 
@@ -254,16 +260,19 @@ def patch_page_model_references(project_root: Path):
 
 
 def patch_bootstrap4_migration_report(_project_root: Path):
-    """Generate the Bootstrap4 migration strategy report."""
-    banner("Generating Bootstrap4 migration report")
+    """Generate the Bootstrap4 → djangocms-frontend migration report."""
+    banner("Generating djangocms-frontend migration report")
 
     report_path = Path("cms4_bootstrap4_migration.txt")
     with open(report_path, "w") as fh:
         fh.write(textwrap.dedent("""
-        djangocms-bootstrap4 → CMS 4 migration
-        ========================================
+        djangocms-bootstrap4 → djangocms-frontend migration
+        =====================================================
 
         djangocms-bootstrap4 is NOT compatible with django-cms 4.x.
+        djangocms-frontend is the actively maintained successor to both
+        djangocms-bootstrap4 and djangocms-bootstrap5, and is the
+        recommended replacement for this project.
 
         YOUR DATA (from kairos project.db):
           272 × Bootstrap4GridColumnPlugin
@@ -274,28 +283,72 @@ def patch_bootstrap4_migration_report(_project_root: Path):
           ───────────────────────────────
           585 plugin instances total across 11 pages (de/en/es)
 
-        OPTION A — Migrate to djangocms-bootstrap5 (RECOMMENDED)
-        ──────────────────────────────────────────────────────────
-          pip install djangocms-bootstrap5
-          Add 'djangocms_bootstrap5' to INSTALLED_APPS.
-          Run: python manage.py migrate
-          Run: python step3_kairos_bootstrap4_migrate.py --db project.db --mode full
+        RECOMMENDED PATH — djangocms-frontend
+        ──────────────────────────────────────
+        djangocms-frontend provides a built-in management command that
+        reads the existing djangocms-bootstrap4 plugin data and creates
+        equivalent djangocms-frontend plugin instances automatically.
 
-          The kairos-specific migration script handles:
-            - FK remapping (internal_link_id, page_link_id) via reverse_id
-            - Copying GridRow / GridColumn / Link / Picture data to BS5 tables
+        Step-by-step:
 
-        OPTION B — Convert to plain HTML (most control, most work)
-          Replace Bootstrap4 plugin blocks with Text plugin HTML snippets.
+          1. Keep djangocms-bootstrap4 installed for now (needed by the
+             migration command to read the old plugin data).
+
+          2. Install djangocms-frontend:
+               pip install "djangocms-frontend>=2.0.0"
+
+          3. Add both apps to INSTALLED_APPS (order matters):
+               'djangocms_bootstrap4',   # keep temporarily
+               'djangocms_frontend',     # add after bootstrap4
+
+          4. Run Django migrations:
+               python manage.py migrate
+
+          5. Run the kairos FK-remapping first (fixes page ID references
+             that CMS 4 may have changed):
+               python step3_kairos_bootstrap4_migrate.py \\
+                   --db project.db --mode remap-fks
+
+          6. Run djangocms-frontend's bootstrap4 migration command:
+               python manage.py cms_frontend migrate bootstrap4
+             (verify exact command name for your installed version with:
+              python manage.py help | grep frontend)
+
+          7. Verify the site renders correctly with the new plugins.
+
+          8. Once verified, remove djangocms-bootstrap4:
+               pip uninstall djangocms-bootstrap4
+             Remove 'djangocms_bootstrap4' from INSTALLED_APPS.
+             Run: python step3_kairos_bootstrap4_migrate.py --mode cleanup
+
+        WHAT djangocms-frontend PROVIDES vs Bootstrap4
+        ────────────────────────────────────────────────
+          Bootstrap4Plugin          → FrontendUIPlugin (generic container)
+          Bootstrap4GridRowPlugin   → GridPlugin / ContainerPlugin
+          Bootstrap4GridColumnPlugin→ ColumnPlugin
+          Bootstrap4LinkPlugin      → LinkPlugin (frontend variant)
+          Bootstrap4PicturePlugin   → ImagePlugin (frontend variant)
+          Bootstrap4BlockquotePlugin→ BlockquotePlugin
+
+        KAIROS-SPECIFIC FK REMAPPING
+        ─────────────────────────────
+        The kairos DB has 12 Bootstrap4Link.internal_link_id references
+        and 18 PageLinkBox.page_link_id references that point directly
+        to cms_page.id. These must be remapped BEFORE running the
+        djangocms-frontend migration command (step 5 above), because the
+        frontend migration reads these FKs to preserve the link targets.
+
+        Run: python step3_kairos_bootstrap4_migrate.py --db project.db --mode remap-fks
+        BEFORE running the djangocms-frontend migration command.
+
+        FALLBACK OPTION — Convert to plain HTML
+        ─────────────────────────────────────────
+        If djangocms-frontend migration fails for any reason:
+          Replace Bootstrap4 plugin blocks manually with Text plugin HTML.
           ~585 blocks across 3 languages = significant manual effort.
-
-        OPTION C — Freeze old data (quick, but technical debt)
-          Remove from INSTALLED_APPS, keep DB tables, render via custom tag.
-
-        → Run step3_kairos_bootstrap4_migrate.py AFTER choosing an option.
         """).strip())
 
-    ok(f"  Bootstrap4 migration report → {report_path}")
+    ok(f"  Migration report → {report_path}")
 
 
 # ─────────────────────────────────────────────
@@ -329,7 +382,7 @@ def main():
     parser.add_argument("--project-root", default=".", metavar="DIR")
     parser.add_argument("--requirements", default="requirements.txt")
     parser.add_argument("--settings", default="")
-    parser.add_argument("--db", default="project.db")
+    parser.add_argument("--db", default="project.db")  # db.sqlite3")  # project.db")
     parser.add_argument("--skip-install", action="store_true")
     parser.add_argument("--skip-migrate",  action="store_true")
     args = parser.parse_args()
@@ -361,7 +414,7 @@ def main():
     if args.settings:
         settings_files = [root / s.strip() for s in args.settings.split(",")]
     else:
-        settings_files = [s for s in root.rglob("settings*.py")
+        settings_files = [s for s in root.rglob("settings.py")
                           if "migration" not in str(s)]
 
     backup_sqlite(root / args.db, label="pre_step3_cms4")
@@ -374,7 +427,11 @@ def main():
 
     if not args.skip_install and req_file.exists():
         banner("Installing updated packages")
-        pip_uninstall("djangocms-text-ckeditor", "djangocms-bootstrap4", "django-cms")
+        # Only uninstall text-ckeditor here.
+        # djangocms-bootstrap4 must stay installed so that the
+        # djangocms-frontend migration command can read its plugin data.
+        # It is removed later by: step3_kairos_bootstrap4_migrate.py --mode cleanup
+        pip_uninstall("djangocms-text-ckeditor", "django-cms")
         run(f"{sys.executable} -m pip install -r {req_file}")
 
     patch_installed_apps(settings_files)
@@ -391,15 +448,21 @@ def main():
     banner("Step 3 complete ✔")
     print(textwrap.dedent("""
     Manual follow-up required:
-      1. Edit INSTALLED_APPS as described in the warnings above.
+      1. Edit INSTALLED_APPS as described in the warnings above:
+           Keep 'djangocms_bootstrap4' temporarily.
+           Add  'djangocms_frontend' after it.
       2. Open cms4_page_attribute_review.txt — fix each listed location.
-      3. Open cms4_bootstrap4_migration.txt — choose your Bootstrap strategy.
-      4. Run: python step3_kairos_bootstrap4_migrate.py --db project.db --mode remap-fks
-      5. Start dev server, verify CMS pages in admin.
-      6. Run: python manage.py check --deploy
-      7. Commit to version control.
-      8. Then: python step4_cms5.py --project-root .
-         (CMS 4 → CMS 5, still on Django 4.2)
+      3. Open cms4_bootstrap4_migration.txt — follow the step-by-step guide.
+      4. Run FK remapping FIRST:
+           python step3_kairos_bootstrap4_migrate.py --db project.db --mode remap-fks
+      5. Run the djangocms-frontend migration command:
+           python manage.py cms_frontend migrate bootstrap4
+      6. Verify the site renders correctly, then remove djangocms-bootstrap4:
+           python step3_kairos_bootstrap4_migrate.py --mode cleanup
+      7. Start dev server, verify CMS pages in admin.
+      8. Run: python manage.py check --deploy
+      9. Commit to version control.
+     10. Then: python step4_cms5.py --project-root .
     """))
 
 

@@ -172,7 +172,7 @@ def patch_removed_features(project_root: Path):
             pass
 
     # PASSWORD_RESET_TIMEOUT_DAYS removed (use PASSWORD_RESET_TIMEOUT in seconds)
-    for settings in project_root.rglob("settings*.py"):
+    for settings in project_root.rglob("settings.py"):
         content = settings.read_text()
         if "PASSWORD_RESET_TIMEOUT_DAYS" in content:
             warn(f"  {settings.name}: PASSWORD_RESET_TIMEOUT_DAYS is removed. "
