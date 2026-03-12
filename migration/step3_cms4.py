@@ -48,17 +48,18 @@ REQUIREMENTS_UPDATES = {
     "django-mptt":                 "==0.16.0",
     "django-polymorphic":          "==3.1.0",
     "djangocms-versioning":        "==2.1.0",    # NEW — required by CMS 4
-    "djangocms-admin-style":       "==3.3.1",
+    "djangocms-admin-style":       "==3.3.1",    # latest on PyPI (no 4.x exists)
     "djangocms-attributes-field":  "==3.0.0",
-    "djangocms-text":              "==0.6.0",    # replaces djangocms-text-ckeditor
+    "djangocms-text":              ">=0.6.0",    # replaces djangocms-text-ckeditor
     "djangocms-frontend":          ">=2.0.0",    # replaces djangocms-bootstrap4
-    "djangocms-file":              "==4.0.0",
-    "djangocms-googlemap":         "==3.0.0",
-    "djangocms-icon":              "==3.0.0",
-    "djangocms-link":              "==4.0.0",
-    "djangocms-picture":           "==4.0.0",
-    "djangocms-style":             "==4.0.0",
-    "djangocms-video":             "==4.0.0",
+    "djangocms-file":              "==3.0.1",    # latest on PyPI (no 4.x exists)
+    "djangocms-googlemap":         "==2.2.0",    # latest on PyPI (no 3.x exists)
+    "djangocms-icon":              ">=2.0.0",    # use range — exact new version uncertain
+    # Claudo correction: "djangocms-link":              "==4.0.0",    # confirmed on PyPI
+    "djangocms-link": ">=5.0.0",  # djangocms-frontend 2.x requires >=5
+    "djangocms-picture":           "==4.1.1",    # latest on PyPI
+    "djangocms-style":             "==3.1.0",    # latest on PyPI (no 4.x exists)
+    "djangocms-video":             "==3.1.0",    # latest on PyPI (no 4.x exists)
     "django-filer":                "==3.1.2",
     "easy-thumbnails":             "==2.9.0",
     "django-crispy-forms":         "==2.3",
@@ -79,7 +80,7 @@ REMOVALS = [
 
 ADDITIONS = [
     "djangocms-versioning==2.1.0",
-    "djangocms-text==0.6.0",
+    "djangocms-text>=0.6.0",
     "djangocms-frontend>=2.0.0",
     "# NOTE: djangocms-bootstrap4 removed AFTER running step3_kairos_bootstrap4_migrate.py",
     "# NOTE: pytz kept intentionally — remove in step5_django52.py only",
@@ -156,8 +157,7 @@ def patch_cms_settings(settings_files: list[Path]):
         # Add versioning config
         if "DJANGOCMS_VERSIONING_LOCK_VERSIONS" not in content:
             ensure_setting(
-                sf,
-                "DJANGOCMS_VERSIONING_LOCK_VERSIONS",
+                sf, "DJANGOCMS_VERSIONING_LOCK_VERSIONS",
                 "False  # Set True to prevent concurrent editing")
             ok(f"  {sf.name}: added DJANGOCMS_VERSIONING_LOCK_VERSIONS")
 
@@ -382,7 +382,7 @@ def main():
     parser.add_argument("--project-root", default=".", metavar="DIR")
     parser.add_argument("--requirements", default="requirements.txt")
     parser.add_argument("--settings", default="")
-    parser.add_argument("--db", default="project.db")  # db.sqlite3")  # project.db")
+    parser.add_argument("--db", default="project.db")
     parser.add_argument("--skip-install", action="store_true")
     parser.add_argument("--skip-migrate",  action="store_true")
     args = parser.parse_args()

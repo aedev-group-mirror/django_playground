@@ -29,9 +29,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from migration_utils import (
-    banner, ok, info, warn, backup_sqlite,
-    replace_in_file, replace_in_dir, update_requirements, pip_uninstall,
-    manage, check_python_version, check_venv, run,
+    banner, ok, info, warn, backup_sqlite, replace_in_file, replace_in_dir,
+    update_requirements, pip_uninstall, manage, check_python_version, check_venv, run,
 )
 
 # ─────────────────────────────────────────────
@@ -45,18 +44,19 @@ REQUIREMENTS_UPDATES = {
     "django-treebeard":            "==4.7.1",
     "django-mptt":                 "==0.16.0",
     "django-polymorphic":          "==3.1.0",
-    "djangocms-versioning":        "==2.3.0",
-    "djangocms-admin-style":       "==3.3.1",
+    "djangocms-versioning":        "==2.5.0",    # latest on PyPI
+    "djangocms-admin-style":       "==3.3.1",    # latest on PyPI (no 4.x exists)
     "djangocms-attributes-field":  "==3.0.0",
-    "djangocms-text":              "==0.8.0",
+    "djangocms-text":              ">=0.6.0",
     "djangocms-frontend":          ">=2.0.0",    # replaces djangocms-bootstrap4
-    "djangocms-file":              "==4.1.0",
-    "djangocms-googlemap":         "==3.1.0",
-    "djangocms-icon":              "==3.1.0",
-    "djangocms-link":              "==4.1.0",
-    "djangocms-picture":           "==4.1.0",
-    "djangocms-style":             "==4.1.0",
-    "djangocms-video":             "==4.1.0",
+    "djangocms-file":              "==3.0.1",    # latest on PyPI (no 4.x exists)
+    "djangocms-googlemap":         "==2.2.0",    # latest on PyPI (no 3.x exists)
+    "djangocms-icon":              ">=2.0.0",
+    # claude correction: "djangocms-link":              "==4.0.0",
+    "djangocms-link": ">=5.0.0",                 # djangocms-frontend 2.x requires >=5
+    "djangocms-picture":           "==4.1.1",    # latest on PyPI
+    "djangocms-style":             "==3.1.0",    # latest on PyPI (no 4.x exists)
+    "djangocms-video":             "==3.1.0",    # latest on PyPI (no 4.x exists)
     "django-filer":                "==3.3.1",
     "easy-thumbnails":             "==2.10.0",
     "django-crispy-forms":         "==2.3",
@@ -141,8 +141,7 @@ def patch_use_deprecated_pytz(settings_files: list[Path]):
                 replace_in_file(sf, variant, "")
             # Also catch commented variants from step 2
             replace_in_file(
-                sf,
-                "# USE_DEPRECATED_PYTZ  # REMOVED in Django 5.0",
+                sf, "# USE_DEPRECATED_PYTZ  # REMOVED in Django 5.0",
                 "")
             ok(f"  {sf.name}: removed USE_DEPRECATED_PYTZ")
         else:
