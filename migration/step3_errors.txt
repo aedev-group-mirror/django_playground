@@ -1,0 +1,25 @@
+Die Migration der Struktur der Seiten (grids/rows/columns) hat jetzt endlich funktioniert! Die folgenden Punkte funktionieren jedoch noch nicht: 
+
+1) Doppelte CMS Seiten im Admin Bereich (die Menu-items werden darum wahrscheinlich auch im Hauptmenü doppelt angezeigt).
+2) Sowohl der Login-Knopf (oben rechts), als auch der interne link links unten im Footer (signup/member/) zeigen folgende Fehlermeldung:
+   TemplateDoesNotExist: bootstrap4/field.html
+3) die Vorschau mancher der Bilder im admin bereich unter Filer/Folders wird nicht angezeigt: z.B. für das Bild  	
+zeitspiralevenus.jpg wird anstelle des Images ein parken-verboten-icon angezeigt und darunter steht die Meldung "File is missing".
+4) im Admin menü steht rechts neben dem "django CMS"-Eintrag, und den Menüeinträgen "kairos-gomera.eu", "Page", und "Language", ein weiterer Menüeintrag "Version #2 (Draft)"  (zwischen "Page" und "Language") der vorher/in-CMS3.11 nicht da war.
+5) Anstelle des Edit Knopfes im Admin bereich werden die Knöpfe mit den Beschriftungen "Create", "New Draft" und "View Published" angezeigt.
+   Erst nachdem ich auf "New Draft" geklickt habe (mit der Home/Startseite gemacht) wird anstelle von "New Draft" der "Edit" Knopf angezeigt.
+6) Alle Bootstrap4 links werden nicht mehr angezeigt (weder im Vorschau- noch im Edit-Modus).
+7) Die Link-Adressen des PageLinkPlugins (der Django app page_link_plugin) sind falsch (die Hover zeigen und navigieren immer nur die/zur aktuelle(n) URL).
+8) Obwohl der bootstrap4 blockquote korrekt in einen frontend-Blockquote umgewandelt wurde, werden Fontsize and -style zu klein angezeigt. Die Attribute in den "Advanced Settings" wurden zwar übernommen, werden aber scheinbar nicht mehr korrekt interpretiert: class=pl-3 style=border-left: 5px solid #eee; font-size: 2.1rem;
+
+Weitere Aktionen:
+
+A) kairos-gomera.eu auf kairosgomera.eu.pythonanywhere.com umbiegen.
+B) kontakt@kairos-gomera.eu auf aecker2@gmail.com umbiegen.
+C) cleanup: 
+ a: datenbank 
+ b: media (images/pictures) 
+ c: requirements.txt bzw. pyenv/venv 
+ d: settings.py
+
+

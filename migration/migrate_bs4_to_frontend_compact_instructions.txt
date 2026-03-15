@@ -1,0 +1,249 @@
+1:12 PM
+Orchestrierte detaillierte Wiederherstellungs- und Reparaturschritte für Datenbankproblem
+
+The user is understandably frustrated. I've made several mistakes. Let me think carefully about what happened and what the correct path forward is.
+
+The backup is project_pre_step3_cms4.db.bak. We need to restore it and redo all the steps we've done since then. Let me think about what steps were completed successfully:
+
+    step3_cms4.py ran successfully (migrate)
+    create_versions --username admin ran successfully
+    migrate_bs4_to_frontend.py ran successfully (585 plugins)
+    The contrib apps were added to INSTALLED_APPS
+    manage.py migrate (for the contrib apps)
+    publish versions (v.publish)
+    Then we tried to delete duplicate pages and deleted ALL pages
+
+So we need to restore from backup and redo steps 2-6 carefully, and handle the duplicate pages differently. The real issue is that the CMS 4 migration created duplicates where each original page got duplicated, and they share the same node. Instead of using Django's delete method which cascades and wipes everything, I should use raw SQL to either update the reverse_id on duplicates or delete directly from the cms_page table to preserve the related data. I need to map out the exact sequence for fixing this: restore the backup, reapply migrations, run the tree fix and versioning commands, then carefully delete only the duplicate page records using a direct database query that won't cascade and remove the content we need to keep. est approach for step 8 is:
+sql
+
+PRAGMA foreign_keys = OFF;
+DELETE FROM cms_page WHERE id IN (2, 9, 8, 14, 11, 16, 19, 13, 22, 20);
+PRAGMA foreign_keys = ON;
+
+But wait - if we delete these pages, what happens to the PageContent objects and Placeholders that reference them? We need to also delete or reassign those.
+
+Actually, looking at the data again - each duplicate pair shares the same node_id. The "real" page has more plugins. The "duplicate" page also has plugins though (just fewer). We need to:
+
+    Delete the PageContent objects for the duplicate pages
+    Delete the duplicate pages themselves
+
+But this is complex. Let me think of a simpler approach.
+
+Actually, the simplest approach: instead of deleting the duplicate pages, just clear their reverse_id field. Then the {% page_url %} tag will find only one page per reverse_id. The duplicate pages will still exist but won't cause conflicts.
+
+Clearing the reverse_id field on those duplicate pages is safer and non-destructive—it solves the MultipleObjectsReturned error without losing data. The pages remain in the tree but won't interfere with template lookups. Now I need to plan out the complete restoration sequence: restore the backup, run migrations, and fix the tree structure. Checking the published version count to confirm everything went through, then I'll run the server to test. Actually, I should double-check the settings.py configuration first—the contrib apps need to be in INSTALLED_APPS before the migrate step, but since we're restoring from a backup that already has the correct settings (CMS_CONFIRM_VERSION4, djangocms_versioning, djangocms_text, and the frontend contrib apps all configured), we should be good to proceed with testing.
+Listo
+
+Du hast Recht, das war mein Fehler. Hier ist der komplette Plan, Schritt für Schritt:
+
+Schritt 1 — Backup wiederherstellen:
+bash
+
+cp project_pre_step3_cms4.db.bak project.db
+
+Schritt 2 — Migrationen ausführen:
+bash
+
+python manage.py migrate
+
+Schritt 3 — Tree reparieren:
+bash
+
+python manage.py cms fix-tree
+
+Schritt 4 — Versionen erstellen:
+bash
+
+python manage.py create_versions --username admin
+
+Schritt 5 — Bootstrap4 migrieren:
+bash
+
+python migration/migrate_bs4_to_frontend.py
+
+Schritt 6 — Duplikate bereinigen (NUR reverse_id leeren, nicht löschen):
+bash
+
+python manage.py dbshell
+
+sql
+
+UPDATE cms_page SET reverse_id = NULL WHERE id IN (2,9,8,14,11,16,19,13,22,20);
+.quit
+
+Schritt 7 — Versionen publizieren:
+bash
+
+python manage.py shell
+
+python
+
+from djangocms_versioning.models import Version
+from djangocms_versioning.constants import DRAFT
+from django.contrib.auth.models import User
+admin = User.objects.get(username='admin')
+for v in Version.objects.filter(state=DRAFT):
+    try:
+        v.publish(user=admin)
+    except Exception as e:
+        print(f"✘ {v.pk}: {e}")
+print("Done:", Version.objects.filter(state='published').count())
+
+Schritt 8 — Testen:
+bash
+
+python manage.py runserver
+
+Bitte jeden Schritt einzeln ausführen und den Output schicken, bevor du zum nächsten gehst.
+
+
+###############################################################################################################
+
+ae: bis Schritt 7 lief alles ok - nachfolgend das log aus der Konsole:
+
+
+~/src/kairos$  python manage.py shell
+Python 3.12.9 (main, May 31 2025, 15:54:16) [GCC 13.3.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+(InteractiveConsole)
+>>> from djangocms_versioning.models import Version
+>>> from djangocms_versioning.constants import DRAFT
+>>> from django.contrib.auth.models import User
+>>> admin = User.objects.get(username='admin')
+>>> for v in Version.objects.filter(state=DRAFT):
+...     try:
+...         v.publish(user=admin)
+...     except Exception as e:
+...         print(f"✘ {v.pk}: {e}")
+... print("Done:", Version.objects.filter(state='published').count())
+  File "<console>", line 6
+    print("Done:", Version.objects.filter(state='published').count())
+    ^^^^^
+SyntaxError: invalid syntax
+>>> 
+>>> print("Done:", Version.objects.filter(state='published').count())
+Done: 0
+>>> 
+>>> 
+>>> 
+>>> from djangocms_versioning.models import Version
+>>> print(Version.objects.values('state').distinct())
+<VersionQuerySet [{'state': 'draft'}]>
+>>> 
+>>> 
+>>> 
+>>> 
+>>> 
+>>> from djangocms_versioning.models import Version
+>>> from djangocms_versioning.constants import DRAFT, PUBLISHED
+>>> from django.contrib.auth.models import User
+>>> 
+>>> admin = User.objects.get(username='admin')
+>>> versions = Version.objects.filter(state=DRAFT)
+>>> print(f"Draft versions: {versions.count()}")
+Draft versions: 66
+>>> 
+>>> for v in versions:
+...     try:
+...         v.publish(user=admin)
+...         v.refresh_from_db()
+...         print(f"  ✔ id={v.pk} state={v.state}")
+...     except Exception as e:
+...         print(f"  ✘ id={v.pk}: {e}")
+... 
+  ✘ id=1: Direct state modification is not allowed
+  ✘ id=2: Direct state modification is not allowed
+  ✘ id=3: Direct state modification is not allowed
+  ✘ id=4: Direct state modification is not allowed
+  ✘ id=5: Direct state modification is not allowed
+  ✘ id=6: Direct state modification is not allowed
+  ✘ id=7: Direct state modification is not allowed
+  ✘ id=8: Direct state modification is not allowed
+  ✘ id=9: Direct state modification is not allowed
+  ✘ id=10: Direct state modification is not allowed
+  ✘ id=11: Direct state modification is not allowed
+  ✘ id=12: Direct state modification is not allowed
+  ✘ id=13: Direct state modification is not allowed
+  ✘ id=14: Direct state modification is not allowed
+  ✘ id=15: Direct state modification is not allowed
+  ✘ id=16: Direct state modification is not allowed
+  ✘ id=17: Direct state modification is not allowed
+  ✘ id=18: Direct state modification is not allowed
+  ✘ id=19: Direct state modification is not allowed
+  ✘ id=20: Direct state modification is not allowed
+  ✘ id=21: Direct state modification is not allowed
+  ✘ id=22: Direct state modification is not allowed
+  ✘ id=23: Direct state modification is not allowed
+  ✘ id=24: Direct state modification is not allowed
+  ✘ id=25: Direct state modification is not allowed
+  ✘ id=26: Direct state modification is not allowed
+  ✘ id=27: Direct state modification is not allowed
+  ✘ id=28: Direct state modification is not allowed
+  ✘ id=29: Direct state modification is not allowed
+  ✘ id=30: Direct state modification is not allowed
+  ✘ id=31: Direct state modification is not allowed
+  ✘ id=32: Direct state modification is not allowed
+  ✘ id=33: Direct state modification is not allowed
+  ✘ id=34: Direct state modification is not allowed
+  ✘ id=35: Direct state modification is not allowed
+  ✘ id=36: Direct state modification is not allowed
+  ✘ id=37: Direct state modification is not allowed
+  ✘ id=38: Direct state modification is not allowed
+  ✘ id=39: Direct state modification is not allowed
+  ✘ id=40: Direct state modification is not allowed
+  ✘ id=41: Direct state modification is not allowed
+  ✘ id=42: Direct state modification is not allowed
+  ✘ id=43: Direct state modification is not allowed
+  ✘ id=44: Direct state modification is not allowed
+  ✘ id=45: Direct state modification is not allowed
+  ✘ id=46: Direct state modification is not allowed
+  ✘ id=47: Direct state modification is not allowed
+  ✘ id=48: Direct state modification is not allowed
+  ✘ id=49: Direct state modification is not allowed
+  ✘ id=50: Direct state modification is not allowed
+  ✘ id=51: Direct state modification is not allowed
+  ✘ id=52: Direct state modification is not allowed
+  ✘ id=53: Direct state modification is not allowed
+  ✘ id=54: Direct state modification is not allowed
+  ✘ id=55: Direct state modification is not allowed
+  ✘ id=56: Direct state modification is not allowed
+  ✘ id=57: Direct state modification is not allowed
+  ✘ id=58: Direct state modification is not allowed
+  ✘ id=59: Direct state modification is not allowed
+  ✘ id=60: Direct state modification is not allowed
+  ✘ id=61: Direct state modification is not allowed
+  ✘ id=62: Direct state modification is not allowed
+  ✘ id=63: Direct state modification is not allowed
+  ✘ id=64: Direct state modification is not allowed
+  ✘ id=65: Direct state modification is not allowed
+  ✘ id=66: Direct state modification is not allowed
+>>> 
+>>> 
+>>> 
+>>> from django.db import connection
+>>> 
+>>> with connection.cursor() as cur:
+...     cur.execute("UPDATE djangocms_versioning_version SET state = 'published' WHERE state = 'draft'")
+...     print(f"Updated: {cur.rowcount} rows")
+... 
+<django.db.backends.sqlite3.base.SQLiteCursorWrapper object at 0x76a6101974a0>
+Updated: 0 rows
+>>> # Verifizieren:
+>>> with connection.cursor() as cur:
+...     cur.execute("SELECT state, COUNT(*) FROM djangocms_versioning_version GROUP BY state")
+...     for row in cur.fetchall():
+...         print(row)
+... 
+<django.db.backends.sqlite3.base.SQLiteCursorWrapper object at 0x76a610197530>
+('published', 66)
+>>> 
+
+
+ae: jetzt war das Claude free kontingent aufgebraucht (die letzte Antwort habe ich noch ausgeführt aber die Ausgabe nicht an Claude geschickt.
+ae: danach hab ich runserver gemacht und ich sehe alle Seiten in allen drei sprachen! was nicht funktioniert:
+1) login button zeigt Fehlermeldung: TemplateDoesNotExist bootstrap4/field.html
+2) menu items sind doppelt vorhanden
+3) Schriftstile/größe ist falsch (Gandhi zitat auf startseite)
+
+
+
