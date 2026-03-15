@@ -56,7 +56,7 @@ REQUIREMENTS_UPDATES = {
     "djangocms-googlemap":         "==2.2.0",    # latest on PyPI (no 3.x exists)
     "djangocms-icon":              ">=2.0.0",    # use range — exact new version uncertain
     # Claudo correction: "djangocms-link":              "==4.0.0",    # confirmed on PyPI
-    "djangocms-link": ">=5.0.0",  # djangocms-frontend 2.x requires >=5
+    "djangocms-link":              ">=5.0.0",    # djangocms-frontend 2.x requires >=5
     "djangocms-picture":           "==4.1.1",    # latest on PyPI
     "djangocms-style":             "==3.1.0",    # latest on PyPI (no 4.x exists)
     "djangocms-video":             "==3.1.0",    # latest on PyPI (no 4.x exists)
@@ -108,10 +108,10 @@ def patch_installed_apps(settings_files: list[Path]):
             )
         if "djangocms_bootstrap4" in content:
             issues.append(
-                f"  KEEP    'djangocms_bootstrap4' temporarily (needed by frontend migration)\n"
-                f"  ADD     'djangocms_frontend'  ← add AFTER 'djangocms_bootstrap4'\n"
-                f"  REMOVE  'djangocms_bootstrap4' only AFTER running:\n"
-                f"          python step3_kairos_bootstrap4_migrate.py --mode frontend"
+                f"  REMOVE  ALL 'djangocms_bootstrap4*' entries from INSTALLED_APPS.\n"
+                f"          (djangocms-link 5.x is incompatible with bootstrap4 at import time)\n"
+                f"          The bootstrap4 DB tables stay intact — only remove from INSTALLED_APPS.\n"
+                f"  KEEP    'djangocms_frontend'"
             )
         if "djangocms_versioning" not in content:
             issues.append(
@@ -142,6 +142,12 @@ def patch_cms_settings(settings_files: list[Path]):
     banner("Patching CMS_ settings for CMS 4")
     for sf in settings_files:
         content = sf.read_text()
+
+        # CMS_CONFIRM_VERSION4 — REQUIRED by CMS 4, migrate refuses without it
+        if "CMS_CONFIRM_VERSION4" not in content:
+            ensure_setting(sf, "CMS_CONFIRM_VERSION4",
+                           "True  # Required to confirm intentional upgrade to django-cms 4")
+            ok(f"  {sf.name}: added CMS_CONFIRM_VERSION4 = True")
 
         # CMS_TOOLBAR_ANONYMOUS_ON removed
         if "CMS_TOOLBAR_ANONYMOUS_ON" in content:
@@ -285,41 +291,51 @@ def patch_bootstrap4_migration_report(_project_root: Path):
 
         RECOMMENDED PATH — djangocms-frontend
         ──────────────────────────────────────
-        djangocms-frontend provides a built-in management command that
-        reads the existing djangocms-bootstrap4 plugin data and creates
-        equivalent djangocms-frontend plugin instances automatically.
+        djangocms-frontend reads bootstrap4 data directly from the DB
+        tables — it does NOT need djangocms-bootstrap4 in INSTALLED_APPS.
+
+        IMPORTANT: djangocms-link 5.x (required by djangocms-frontend 2.x)
+        is incompatible with djangocms-bootstrap4 at import time.
+        bootstrap4_link imports from djangocms_link.forms which no longer
+        exists in link 5.x. Therefore ALL djangocms_bootstrap4* apps MUST
+        be removed from INSTALLED_APPS BEFORE running manage.py migrate.
+        The bootstrap4 DB tables remain — Django does not drop tables for
+        apps removed from INSTALLED_APPS.
 
         Step-by-step:
 
-          1. Keep djangocms-bootstrap4 installed for now (needed by the
-             migration command to read the old plugin data).
+          1. Remove ALL djangocms_bootstrap4* from INSTALLED_APPS:
+               'djangocms_bootstrap4',
+               'djangocms_bootstrap4.contrib.bootstrap4_alerts',
+               'djangocms_bootstrap4.contrib.bootstrap4_badge',
+               'djangocms_bootstrap4.contrib.bootstrap4_card',
+               'djangocms_bootstrap4.contrib.bootstrap4_carousel',
+               'djangocms_bootstrap4.contrib.bootstrap4_collapse',
+               'djangocms_bootstrap4.contrib.bootstrap4_content',
+               'djangocms_bootstrap4.contrib.bootstrap4_grid',
+               'djangocms_bootstrap4.contrib.bootstrap4_jumbotron',
+               'djangocms_bootstrap4.contrib.bootstrap4_link',
+               'djangocms_bootstrap4.contrib.bootstrap4_listgroup',
+               'djangocms_bootstrap4.contrib.bootstrap4_media',
+               'djangocms_bootstrap4.contrib.bootstrap4_picture',
+               'djangocms_bootstrap4.contrib.bootstrap4_tabs',
+               'djangocms_bootstrap4.contrib.bootstrap4_utilities',
+             Also remove djangocms-bootstrap4 from requirements.txt.
+             Keep 'djangocms_frontend' in INSTALLED_APPS.
 
-          2. Install djangocms-frontend:
-               pip install "djangocms-frontend>=2.0.0"
-
-          3. Add both apps to INSTALLED_APPS (order matters):
-               'djangocms_bootstrap4',   # keep temporarily
-               'djangocms_frontend',     # add after bootstrap4
-
-          4. Run Django migrations:
+          2. Run Django migrations:
                python manage.py migrate
 
-          5. Run the kairos FK-remapping first (fixes page ID references
-             that CMS 4 may have changed):
+          3. Run the kairos FK-remapping (fixes page ID references):
                python step3_kairos_bootstrap4_migrate.py \\
                    --db project.db --mode remap-fks
 
-          6. Run djangocms-frontend's bootstrap4 migration command:
+          4. Run djangocms-frontend's bootstrap4 migration command:
                python manage.py cms_frontend migrate bootstrap4
-             (verify exact command name for your installed version with:
+             (verify exact command name:
               python manage.py help | grep frontend)
 
-          7. Verify the site renders correctly with the new plugins.
-
-          8. Once verified, remove djangocms-bootstrap4:
-               pip uninstall djangocms-bootstrap4
-             Remove 'djangocms_bootstrap4' from INSTALLED_APPS.
-             Run: python step3_kairos_bootstrap4_migrate.py --mode cleanup
+          5. Verify the site renders correctly with the new plugins.
 
         WHAT djangocms-frontend PROVIDES vs Bootstrap4
         ────────────────────────────────────────────────
@@ -365,11 +381,11 @@ def run_cms4_data_migration(root: Path):
 
     info("  Step C: Create initial versions for existing content")
     rc = run(
-        f"{sys.executable} manage.py versioning_create_initial_versions",
+        f"{sys.executable} manage.py create_versions --username admin",
         cwd=str(root), check=False,
     )
     if rc != 0:
-        warn("  'versioning_create_initial_versions' not available yet — OK at this stage.")
+        warn("  'create_versions' not available yet — OK at this stage.")
         warn("  Run it manually once djangocms-versioning is fully configured.")
 
 
@@ -448,18 +464,17 @@ def main():
     banner("Step 3 complete ✔")
     print(textwrap.dedent("""
     Manual follow-up required:
-      1. Edit INSTALLED_APPS as described in the warnings above:
-           Keep 'djangocms_bootstrap4' temporarily.
-           Add  'djangocms_frontend' after it.
-      2. Open cms4_page_attribute_review.txt — fix each listed location.
-      3. Open cms4_bootstrap4_migration.txt — follow the step-by-step guide.
-      4. Run FK remapping FIRST:
+      1. Edit INSTALLED_APPS — remove ALL 'djangocms_bootstrap4*' entries.
+         (djangocms-link 5.x is incompatible with bootstrap4 at import time)
+         Keep 'djangocms_frontend'.
+      2. Remove djangocms-bootstrap4 from requirements.txt.
+      3. Open cms4_page_attribute_review.txt — fix each listed location.
+      4. Run: python manage.py migrate
+      5. Run FK remapping:
            python step3_kairos_bootstrap4_migrate.py --db project.db --mode remap-fks
-      5. Run the djangocms-frontend migration command:
+      6. Run the djangocms-frontend migration command:
            python manage.py cms_frontend migrate bootstrap4
-      6. Verify the site renders correctly, then remove djangocms-bootstrap4:
-           python step3_kairos_bootstrap4_migrate.py --mode cleanup
-      7. Start dev server, verify CMS pages in admin.
+      7. Verify the site renders correctly.
       8. Run: python manage.py check --deploy
       9. Commit to version control.
      10. Then: python step4_cms5.py --project-root .

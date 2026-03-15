@@ -53,7 +53,7 @@ REQUIREMENTS_UPDATES = {
     "djangocms-googlemap":         "==2.2.0",    # latest on PyPI (no 3.x exists)
     "djangocms-icon":              ">=2.0.0",
     # claude correction: "djangocms-link":              "==4.0.0",
-    "djangocms-link": ">=5.0.0",                 # djangocms-frontend 2.x requires >=5
+    "djangocms-link":              ">=5.0.0",    # djangocms-frontend 2.x requires >=5
     "djangocms-picture":           "==4.1.1",    # latest on PyPI
     "djangocms-style":             "==3.1.0",    # latest on PyPI (no 4.x exists)
     "djangocms-video":             "==3.1.0",    # latest on PyPI (no 4.x exists)
