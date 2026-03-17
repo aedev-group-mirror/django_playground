@@ -1,0 +1,9 @@
+CMS 4: Page → PageContent attribute migration review
+============================================================
+
+The following lines likely access Page model attributes that
+moved to PageContent in CMS 4. Review and update each:
+
+  Old: page.title
+  New: page.get_content_obj().title
+

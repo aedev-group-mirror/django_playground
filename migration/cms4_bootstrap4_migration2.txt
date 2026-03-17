@@ -1,0 +1,90 @@
+djangocms-bootstrap4 → djangocms-frontend migration
+=====================================================
+
+djangocms-bootstrap4 is NOT compatible with django-cms 4.x.
+djangocms-frontend is the actively maintained successor to both
+djangocms-bootstrap4 and djangocms-bootstrap5, and is the
+recommended replacement for this project.
+
+YOUR DATA (from kairos project.db):
+  272 × Bootstrap4GridColumnPlugin
+  109 × Bootstrap4GridRowPlugin
+  108 × Bootstrap4LinkPlugin
+   90 × Bootstrap4PicturePlugin
+    6 × Bootstrap4BlockquotePlugin
+  ───────────────────────────────
+  585 plugin instances total across 11 pages (de/en/es)
+
+RECOMMENDED PATH — djangocms-frontend
+──────────────────────────────────────
+djangocms-frontend reads bootstrap4 data directly from the DB
+tables — it does NOT need djangocms-bootstrap4 in INSTALLED_APPS.
+
+IMPORTANT: djangocms-link 5.x (required by djangocms-frontend 2.x)
+is incompatible with djangocms-bootstrap4 at import time.
+bootstrap4_link imports from djangocms_link.forms which no longer
+exists in link 5.x. Therefore ALL djangocms_bootstrap4* apps MUST
+be removed from INSTALLED_APPS BEFORE running manage.py migrate.
+The bootstrap4 DB tables remain — Django does not drop tables for
+apps removed from INSTALLED_APPS.
+
+Step-by-step:
+
+  1. Remove ALL djangocms_bootstrap4* from INSTALLED_APPS:
+       'djangocms_bootstrap4',
+       'djangocms_bootstrap4.contrib.bootstrap4_alerts',
+       'djangocms_bootstrap4.contrib.bootstrap4_badge',
+       'djangocms_bootstrap4.contrib.bootstrap4_card',
+       'djangocms_bootstrap4.contrib.bootstrap4_carousel',
+       'djangocms_bootstrap4.contrib.bootstrap4_collapse',
+       'djangocms_bootstrap4.contrib.bootstrap4_content',
+       'djangocms_bootstrap4.contrib.bootstrap4_grid',
+       'djangocms_bootstrap4.contrib.bootstrap4_jumbotron',
+       'djangocms_bootstrap4.contrib.bootstrap4_link',
+       'djangocms_bootstrap4.contrib.bootstrap4_listgroup',
+       'djangocms_bootstrap4.contrib.bootstrap4_media',
+       'djangocms_bootstrap4.contrib.bootstrap4_picture',
+       'djangocms_bootstrap4.contrib.bootstrap4_tabs',
+       'djangocms_bootstrap4.contrib.bootstrap4_utilities',
+     Also remove djangocms-bootstrap4 from requirements.txt.
+     Keep 'djangocms_frontend' in INSTALLED_APPS.
+
+  2. Run Django migrations:
+       python manage.py migrate
+
+  3. Run the kairos FK-remapping (fixes page ID references):
+       python step3_kairos_bootstrap4_migrate.py \
+           --db project.db --mode remap-fks
+
+  4. Run djangocms-frontend's bootstrap4 migration command:
+       python manage.py cms_frontend migrate bootstrap4
+     (verify exact command name:
+      python manage.py help | grep frontend)
+
+  5. Verify the site renders correctly with the new plugins.
+
+WHAT djangocms-frontend PROVIDES vs Bootstrap4
+────────────────────────────────────────────────
+  Bootstrap4Plugin          → FrontendUIPlugin (generic container)
+  Bootstrap4GridRowPlugin   → GridPlugin / ContainerPlugin
+  Bootstrap4GridColumnPlugin→ ColumnPlugin
+  Bootstrap4LinkPlugin      → LinkPlugin (frontend variant)
+  Bootstrap4PicturePlugin   → ImagePlugin (frontend variant)
+  Bootstrap4BlockquotePlugin→ BlockquotePlugin
+
+KAIROS-SPECIFIC FK REMAPPING
+─────────────────────────────
+The kairos DB has 12 Bootstrap4Link.internal_link_id references
+and 18 PageLinkBox.page_link_id references that point directly
+to cms_page.id. These must be remapped BEFORE running the
+djangocms-frontend migration command (step 5 above), because the
+frontend migration reads these FKs to preserve the link targets.
+
+Run: python step3_kairos_bootstrap4_migrate.py --db project.db --mode remap-fks
+BEFORE running the djangocms-frontend migration command.
+
+FALLBACK OPTION — Convert to plain HTML
+─────────────────────────────────────────
+If djangocms-frontend migration fails for any reason:
+  Replace Bootstrap4 plugin blocks manually with Text plugin HTML.
+  ~585 blocks across 3 languages = significant manual effort.
