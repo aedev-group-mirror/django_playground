@@ -1,0 +1,98 @@
+/home/andi/.pyenv/versions/web312/bin/python -X pycache_prefix=/home/andi/.cache/JetBrains/PyCharm2025.3/cpython-cache /snap/pycharm-community/580/plugins/python-ce/helpers/pydev/pydevd.py --multiprocess --qt-support=auto --client 127.0.0.1 --port 38107 --file /home/andi/src/django_playground/migration/step2_django42.py
+Connected to: <socket.socket fd=3, family=2, type=1, proto=0, laddr=('127.0.0.1', 46218), raddr=('127.0.0.1', 38107)>.
+Connected to pydev debugger (build 253.31033.139)
+  ✔  Python 3.12.9 ✔
+  ✔  Virtual env: /home/andi/.pyenv/versions/web312
+  ℹ  Project root: /home/andi/src/kairos
+  ℹ  Auto-detected settings: ['/home/andi/src/kairos/kairos/settings.py']
+  ✔  DB backed up → /home/andi/src/kairos/project_pre_step2.db.bak
+
+┌─────────────────────────────┐
+│  Updating requirements.txt  │
+└─────────────────────────────┘
+
+  ✔  Backed up /home/andi/src/kairos/requirements.txt → requirements.txt.bak
+  ✔    Updating: django-cms>=3.11.10,<4.0        # cannot install ==3.11.8  →  django-cms==3.11.8
+  ✔    Updating: djangocms-admin-style==3.2.0  →  djangocms-admin-style==3.2.3
+  ✔    Updating: django-treebeard==4.7.1  →  django-treebeard==4.7.1
+  ✔    Updating: djangocms-text-ckeditor==5.1.1  # 4.1.0 does not exist (Gemini recommends 5.1.1)  →  djangocms-text-ckeditor==4.1.1
+  ✔    Updating: djangocms-link==4.0.0           # 3.3.1 does not exist, Gemini recommends 3.1.0 but conflicts later w/ django-treebeard==4.7.1  →  djangocms-link==3.3.1
+  ✔    Updating: djangocms-icon==2.0.0  →  djangocms-icon==2.1.0
+  ✔    Updating: djangocms-style==3.0.0  →  djangocms-style==3.1.0
+  ✔    Updating: djangocms-googlemap==2.0.0  →  djangocms-googlemap==2.1.1
+  ✔    Updating: djangocms-video==3.0.0  →  djangocms-video==3.1.0
+  ✔    Updating: djangocms-file==3.0.0  →  djangocms-file==3.0.1
+  ✔    Updating: djangocms-picture==3.0.0        # 3.1.0 does not exist  →  djangocms-picture==3.1.0
+  ✔    Updating: djangocms-bootstrap4==2.0.0  →  djangocms-bootstrap4==2.0.0
+  ✔    Updating: django-filer==3.0.4  →  django-filer==3.1.2
+  ✔    Updating: Django==3.2.25  →  Django==4.2.17
+  ✔    Updating: django-classy-tags==3.0.1  →  django-classy-tags==4.1.0
+  ✔    Updating: django-sekizai==3.0.1  →  django-sekizai==4.0.0
+  ✔    Updating: django-mptt==0.14.0  →  django-mptt==0.16.0
+  ✔    Updating: django-crispy-forms==1.14.0  →  django-crispy-forms==2.3
+  ✔    Updating: pytz  →  pytz==2024.1
+  ✔    Adding: crispy-bootstrap4==2024.1
+/snap/pycharm-community/580/plugins/python-ce/helpers/pydev/pydevd.py:1133: RuntimeWarning: assigning None to 1 unbound local
+  frame.f_lineno = line
+
+┌─────────────────────────────────┐
+│  Checking CSRF_TRUSTED_ORIGINS  │
+└─────────────────────────────────┘
+
+
+┌─────────────────────────────┐
+│  Checking USE_L10N setting  │
+└─────────────────────────────┘
+
+  ⚠    settings.py: USE_L10N not set. Django 4.0 defaults to True. Add USE_L10N = True explicitly to silence warnings.
+  ✔  Added 'USE_L10N = True' to settings.py
+
+┌────────────────────────────────┐
+│  Patching USE_DEPRECATED_PYTZ  │
+└────────────────────────────────┘
+
+  ✔  Added 'USE_DEPRECATED_PYTZ = False' to settings.py
+
+┌────────────────────────────────┐
+│  Patching removed Django APIs  │
+└────────────────────────────────┘
+
+
+┌──────────────────────────────────────────┐
+│  Patching django-crispy-forms → 2.x API  │
+└──────────────────────────────────────────┘
+
+  ✔  Added 'CRISPY_ALLOWED_TEMPLATE_PACKS = ("bootstrap4",)' to settings.py
+
+┌───────────────────────────────────┐
+│  Checking django-formtools usage  │
+└───────────────────────────────────┘
+
+
+┌─────────────────────────────┐
+│  Checking custom AdminSite  │
+└─────────────────────────────┘
+
+
+┌────────────────────────────────────────┐
+│  Checking SecurityMiddleware position  │
+└────────────────────────────────────────┘
+
+
+┌─────────────────────────────┐
+│  Patching Django templates  │
+└─────────────────────────────┘
+
+
+┌─────────────────────┐
+│  Step 2 complete ✔  │
+└─────────────────────┘
+
+
+Next steps:
+  1. Run tests: python manage.py test
+  2. Check for any remaining DeprecationWarnings in the console.
+  3. Verify CSRF_TRUSTED_ORIGINS entries are correct.
+  4. Review any PASSWORD_RESET_TIMEOUT changes in settings.
+  5. Commit to version control.
+  6. Then run:  python step3_django52.py --project-root .
