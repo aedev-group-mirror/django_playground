@@ -1,5 +1,5 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.77
-# ReadTheDocs configuration file (see https://docs.readthedocs.io/en/stable/config-file/v2.html for details) to use
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.96
+# RTD/ReadTheDocs configuration file (see https://docs.readthedocs.io/en/stable/config-file/v2.html for details) to use
 # .. actual versions of python/Sphinx/.. (see https://docs.readthedocs.io/en/stable/build-default-versions.html)
 version: 2
 
@@ -7,6 +7,9 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.12"
+  apt_packages:
+    # graphviz needed e.g. for ae_sys_data-module-docstring
+    - graphviz
 
 sphinx:
    configuration: docs/conf.py

@@ -1,4 +1,4 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.77
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.96
 """
 configuration file for the Sphinx documentation builder
 =======================================================
@@ -40,11 +40,14 @@ import sys
 # found at https://github.com/readthedocs/sphinx_rtd_theme - not needed
 # import sphinx_rtd_theme
 
-from typing import Any, Dict
+from typing import Any
 
+
+from aedev.base import PROJECT_VERSION_SEP                          # type: ignore
 from aedev.project_vars import ProjectDevVars                       # type: ignore
 
 # add project root path, above of this file (conf.py) and the docs folder, to sys.path
+# noinspection PyTypeChecker
 project_path = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, project_path)
 
@@ -78,15 +81,14 @@ extensions = [
     # 'sphinx.ext.coverage',        # not needed because all covered; test by adding to "make html" the "-b coverage"
     # .. option and then check _build/coverage/python.txt (or add it to index.rst).
     'sphinx.ext.autosectionlabel',  # create refs for all titles, subtitles
-    'sphinx_rtd_theme',
 ]
-# --- add the extensions that get installed via pip
-extensions.extend(_ for _ in docs_requires if _.startswith("sphinx_"))   # remove Sphinx from other sphinx extensions
+# --- add the extensions that get installed via pip; remove Sphinx from other sphinx extensions
+extensions.extend(_.split(PROJECT_VERSION_SEP)[0] for _ in docs_requires if _.startswith("sphinx_"))
 
 # -- autodoc config
 # None==enabled (True failing on RTD builds - replaced with None) - see https://github.com/sphinx-doc/sphinx/issues/5459
 ENABLED = None
-autodoc_default_options: Dict[str, Any] = dict(
+autodoc_default_options: dict[str, Any] = dict(
     autosummary_generate=ENABLED,
     members=ENABLED,
 )
@@ -168,3 +170,6 @@ master_doc = 'index'    # pylint: disable=invalid-name # Sphinx default is 'inde
 # workaround Kivy bug until fixing PR #7435 get released (with Kivy 2.1.0)
 os.environ['KIVY_DOC'] = '1'
 os.environ['KIVY_NO_ARGS'] = '1'
+
+
+keep_warnings = True    # keep docs build warnings inline in the resulting doc/html/pdf

@@ -1,12 +1,10 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.77
-# RTD-build was failing if the Sphinx version (6.1.3++) was not specified/pinned (RTD was using 1.8.5 by default).
-# .. which seems to be fixed newer Sphinx version (tested with 7.2.6)
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.96
+# Sphinx/RTD docs building requirements
 sphinx
-# using package name sphinx_rtd_theme with underscores raises Sphinx Extension error:
-# .. Could not import extension sphinx_rtd_theme==1.0.0 (exception: No module named 'sphinx_rtd_theme==1')
-sphinx-rtd-theme
+sphinx_rtd_theme
 sphinx_autodoc_typehints
 sphinx_paramlinks
 -r ../dev_requirements.txt
-# docs/conf.py is importing aedev.project_vars
+# docs/conf.py is importing aedev.base and aedev.project_vars
+aedev_base
 aedev_project_vars
