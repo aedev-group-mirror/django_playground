@@ -1,17 +1,32 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.77
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.96
 image: python:3.12
 
 
 
 
 
-before_script:
-  - python --version
-  - pip install --upgrade setuptools pip pipx
-  - pip install --upgrade -r requirements.txt -r tests/requirements.txt
-
+.check_rules: &check-rules
+  rules:
+    - if: $CI_COMMIT_BRANCH == "develop"
+      when: never
+    - if: $CI_COMMIT_BRANCH =~ /^release/
+      when: never
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH
 
 integrity:
+  <<: *check-rules
+  before_script:
+    - python --version
+    - pip --version
+    - pip install --upgrade pip pipx setuptools
+    - pip --version
+    - >
+      pip install --upgrade --force-reinstall --uploaded-prior-to=P9D
+      -r requirements.txt
+      -r tests/requirements.txt
+    
   script:
     - pipx run --spec aedev_project_manager project-manager -v check-integrity
   artifacts:
@@ -21,11 +36,11 @@ integrity:
       - htmlcov/
       - .pytest_cache
 
-
 pages:
   stage: deploy
   dependencies:
     - integrity
+  <<: *check-rules
   script:
     - ls -l -R
     - mkdir -p public/coverage
@@ -52,7 +67,7 @@ pypi_deploy:
     TWINE_USERNAME: $PYPI_USERNAME
     TWINE_PASSWORD: $PYPI_PASSWORD
   before_script:
-     - pip install --upgrade pip build twine
+     - pip install --upgrade build pip twine
      - python -m build
   script:
     # use test.pypi.org for integration/unit test projects (if is under :data:`~aedev.base.TEST_PROJECTS_PARENT_FOLDER`)

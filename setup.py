@@ -1,15 +1,14 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.77
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.96
 """ setup of django_playground playground: django_playground playground main module. """
-import sys
-# noinspection PyUnresolvedReferences
 import pathlib
-# noinspection PyUnresolvedReferences
+import sys
+from typing import Any
 import setuptools
 
 
 print("SetUp " + __name__ + ": " + sys.executable + str(sys.argv) + f" {sys.path=}")
 
-setup_kwargs = {
+setup_kwargs: dict[str, Any] = {
     'author': 'AndiEcker',
     'author_email': 'aecker2@gmail.com',
     'classifiers': [
@@ -27,9 +26,10 @@ setup_kwargs = {
         'dev': [
             'aedev_project_tpls',
             'sphinx',
-            'sphinx-rtd-theme',
+            'sphinx_rtd_theme',
             'sphinx_autodoc_typehints',
             'sphinx_paramlinks',
+            'aedev_base',
             'aedev_project_vars',
             'anybadge',
             'flake8',
@@ -42,9 +42,10 @@ setup_kwargs = {
         ],
         'docs': [
             'sphinx',
-            'sphinx-rtd-theme',
+            'sphinx_rtd_theme',
             'sphinx_autodoc_typehints',
             'sphinx_paramlinks',
+            'aedev_base',
             'aedev_project_vars',
         ],
         'tests': [
@@ -71,11 +72,12 @@ setup_kwargs = {
     'name': 'django_playground',
     'package_data': {
         '': [
-            'docs/Makefile',
-            'docs/features_and_examples.rst',
-            'docs/requirements.txt',
             'docs/conf.py',
+            'docs/features_and_examples.rst',
             'docs/index.rst',
+            'docs/Makefile',
+            'docs/requirements.txt',
+            'docs/build_docs.sh',
         ],
     },
     'packages': [],
@@ -87,10 +89,10 @@ setup_kwargs = {
     },
     'python_requires': '>=3.12',
     'url': 'https://gitlab.com/aedev-group/django_playground',
-    'version': '0.3.7',
+    'version': '0.3.8',
     'zip_safe': False,
 }
 
 if __name__ == "__main__":
     setuptools.setup(**setup_kwargs)
-    pass
+    ...

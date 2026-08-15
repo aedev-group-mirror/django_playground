@@ -1,9 +1,9 @@
 
 ..
-    THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.77
+    THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.96
 
 django_playground documentation
-################################
+###############################
 
 welcome to the documentation of the django_playground project.
 
@@ -11,13 +11,14 @@ welcome to the documentation of the django_playground project.
 .. include:: features_and_examples.rst
 
 
-code maintenance guidelines
-***************************
+code and maintenance guidelines
+*******************************
 
 
-portions code requirements
-==========================
+project code guidelines
+=======================
 
+    * open source
     * pure python
     * fully typed (:pep:`526`)
     * fully :ref:`documented <-portions>`
@@ -44,6 +45,8 @@ main module
     :nosignatures:
 
     django_playground
+
+
 
 
 

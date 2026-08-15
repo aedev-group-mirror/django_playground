@@ -9,7 +9,6 @@ import sys
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional, Union
 
 
 # colour helpers (no external deps) ─────────────────────────────────────────────
@@ -35,7 +34,7 @@ def banner(title: str):
 
 # shell / pip helpers  ─────────────────────────────────────────────
 
-def run(cmd: str, cwd: Optional[str] = None, check: bool = True) -> int:
+def run(cmd: str, cwd: str | None = None, check: bool = True) -> int:
     """Run a shell command, stream output, return exit code."""
     info(f"$ {cmd}")
     result = subprocess.run(
@@ -61,7 +60,7 @@ def pip_uninstall(*packages: str):
 
 # file / text helpers  ─────────────────────────────────────────────
 
-def backup_file(path: Union[Path, str]) -> Path:
+def backup_file(path: Path | str) -> Path:
     """Copy file → file.bak (overwrites existing .bak)."""
     src = Path(path)
     dst = src.with_suffix(src.suffix + ".bak")
@@ -70,7 +69,7 @@ def backup_file(path: Union[Path, str]) -> Path:
     return dst
 
 
-def replace_in_file(path: Union[Path, str], old: str, new: str,
+def replace_in_file(path: Path | str, old: str, new: str,
                     count: int = 0, regex: bool = False) -> int:
     """
     Replace text in a file in-place.
@@ -93,7 +92,7 @@ def replace_in_file(path: Union[Path, str], old: str, new: str,
     return n
 
 
-def replace_in_dir(root: Union[Path, str], glob: str,
+def replace_in_dir(root: Path | str, glob: str,
                    old: str, new: str, regex: bool = False) -> int:
     """Apply replace_in_file to every matching file under root."""
     total = 0
@@ -102,7 +101,7 @@ def replace_in_dir(root: Union[Path, str], glob: str,
     return total
 
 
-def ensure_setting(settings_path: Union[Path, str], key: str, value: str):
+def ensure_setting(settings_path: Path | str, key: str, value: str):
     """
     If `key` is not already in the settings file, append it.
     value should be the full right-hand side (e.g. '"sqlite3"' or 'True').
@@ -117,14 +116,14 @@ def ensure_setting(settings_path: Union[Path, str], key: str, value: str):
         ok(f"Added '{key} = {value}' to {p.name}")
 
 
-def comment_out_setting(settings_path: Union[Path, str], key: str):
+def comment_out_setting(settings_path: Path | str, key: str):
     replace_in_file(settings_path,
                     f"\n{key}",
                     f"\n# {key}",
                     regex=False)
 
 
-def manage(project_root: Union[Path, str], *args: str, settings_module: Optional[str] = None):
+def manage(project_root: Path | str, *args: str, settings_module: str | None = None):
     """ Django management command runner. """
     root = Path(project_root)
     manage_py = root / "manage.py"
@@ -135,10 +134,10 @@ def manage(project_root: Union[Path, str], *args: str, settings_module: Optional
     run(f"{env_flag}{sys.executable} manage.py {' '.join(args)}", cwd=str(root))
 
 
-def update_requirements(req_file: Union[Path, str],
+def update_requirements(req_file: Path | str,
                         updates: dict[str, str],
-                        removals: Optional[list[str]] = None,
-                        additions: Optional[list[str]] = None):
+                        removals: list[str] | None = None,
+                        additions: list[str] | None = None):
     """ requirements.txt helper, rewriting a requirements file:
       updates  = { "package-name": "==X.Y.Z" }   (case-insensitive name match)
       removals = ["package-to-drop", ...]
@@ -175,7 +174,7 @@ def update_requirements(req_file: Union[Path, str],
     p.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
 
 
-def backup_sqlite(db_path: Union[Path, str], label: str = ""):
+def backup_sqlite(db_path: Path | str, label: str = ""):
     """ DB backup helper. """
     src = Path(db_path)
     if not src.exists():
