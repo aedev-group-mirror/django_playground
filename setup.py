@@ -1,4 +1,4 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.96
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.105
 """ setup of django_playground playground: django_playground playground main module. """
 import pathlib
 import sys
@@ -29,35 +29,20 @@ setup_kwargs: dict[str, Any] = {
             'sphinx_rtd_theme',
             'sphinx_autodoc_typehints',
             'sphinx_paramlinks',
+            'aedev_project_tpls',
             'aedev_base',
             'aedev_project_vars',
-            'anybadge',
-            'flake8',
-            'mypy',
-            'pylint',
-            'pytest',
-            'pytest-cov',
-            'typing',
-            'types-setuptools',
         ],
         'docs': [
             'sphinx',
             'sphinx_rtd_theme',
             'sphinx_autodoc_typehints',
             'sphinx_paramlinks',
+            'aedev_project_tpls',
             'aedev_base',
             'aedev_project_vars',
         ],
-        'tests': [
-            'anybadge',
-            'flake8',
-            'mypy',
-            'pylint',
-            'pytest',
-            'pytest-cov',
-            'typing',
-            'types-setuptools',
-        ],
+        'tests': [],
     },
     'install_requires': [],
     'keywords': [
@@ -72,12 +57,12 @@ setup_kwargs: dict[str, Any] = {
     'name': 'django_playground',
     'package_data': {
         '': [
-            'docs/conf.py',
             'docs/features_and_examples.rst',
-            'docs/index.rst',
             'docs/Makefile',
-            'docs/requirements.txt',
             'docs/build_docs.sh',
+            'docs/conf.py',
+            'docs/index.rst',
+            'docs/requirements.txt',
         ],
     },
     'packages': [],
@@ -89,7 +74,7 @@ setup_kwargs: dict[str, Any] = {
     },
     'python_requires': '>=3.12',
     'url': 'https://gitlab.com/aedev-group/django_playground',
-    'version': '0.3.8',
+    'version': '0.3.9',
     'zip_safe': False,
 }
 
