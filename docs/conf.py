@@ -1,4 +1,4 @@
-# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.96
+# THIS FILE IS EXCLUSIVELY MAINTAINED by the project aedev.project_tpls v0.3.105
 """
 configuration file for the Sphinx documentation builder
 =======================================================
@@ -36,19 +36,16 @@ in the Admin area the following default settings:
 """
 import os
 import sys
+from typing import cast, Any
 
-# found at https://github.com/readthedocs/sphinx_rtd_theme - not needed
-# import sphinx_rtd_theme
+# import sphinx_rtd_theme    - import not needed (see https://github.com/readthedocs/sphinx_rtd_theme)
 
-from typing import Any
-
-
+from ae.base import URI_SVC_SEP                                     # type: ignore
 from aedev.base import PROJECT_VERSION_SEP                          # type: ignore
 from aedev.project_vars import ProjectDevVars                       # type: ignore
 
 # add project root path, above of this file (conf.py) and the docs folder, to sys.path
-# noinspection PyTypeChecker
-project_path = os.path.dirname(os.path.dirname(__file__))
+project_path = os.path.dirname(os.path.dirname(cast(str, __file__)))
 sys.path.insert(0, project_path)
 
 
@@ -57,6 +54,8 @@ root_pdv = ProjectDevVars(project_path=project_path)
 author = root_pdv['STK_AUTHOR']
 # copyright = str(datetime.datetime.now().year) + ", " + author
 docs_requires = root_pdv.pdv_val('docs_requires')
+# language = "en"       # default, also explicitly specified in build_docs.sh in build command option: -D language=en
+locale_dirs = []        # disable docs build warning "... locales/en/LC_MESSAGES does not exist"
 project = root_pdv['project_desc']
 repo_name = root_pdv['project_name']
 version = root_pdv['project_version']
@@ -118,10 +117,10 @@ exclude_patterns = ["features_and_examples.rst"]
 # example configuration for intersphinx: refer to the Python standard library
 # - found at https://www.mankier.com/1/sphinx-all and https://github.com/traverseda/pycraft/blob/master/docs/conf.py.
 intersphinx_mapping = dict(
-    python=('https://docs.python.org/' + '.'.join(map(str, sys.version_info[0:2])), None),
-    kivy=("https://kivy.org/doc/stable/", None),
-    ae=("https://ae.readthedocs.io/en/latest/", None),
-    aedev=("https://aedev.readthedocs.io/en/latest/", None),
+    python=(f"https://docs.python.org/" + ".".join(map(str, sys.version_info[0:2])), None),
+    kivy=(f"https://kivy.org/doc/stable/", None),
+    ae=(f"https://ae.readthedocs.io/en/latest/", None),
+    aedev=(f"https://aedev.readthedocs.io/en/latest/", None),
 )
 
 # -- options for HTML output -------------------------------------------------
@@ -162,8 +161,7 @@ elif html_theme == 'sphinx_rtd_theme':
         # removed in V 0.1.68: style_external_links=True,
     )
 
-# prevent RTD build fail with 'contents.rst not found' error
-# .. see https://github.com/readthedocs/readthedocs.org/issues/2569
+# prevent RTD build fail error 'contents.rst not found' - see https://github.com/readthedocs/readthedocs.org/issues/2569
 master_doc = 'index'    # pylint: disable=invalid-name # Sphinx default is 'index', whereas RTD default is 'contents'
 
 

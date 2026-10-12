@@ -61,7 +61,7 @@ django-treebeard<6,>=4.3
 als Dependency.
 
 Die von deinem `pip list --outdated` angezeigte `7.0.0` ist tatsächlich eine reale aktuelle Version und unterstützt 
-jango 5.2–6.1.
+Django 5.2–6.1.
 
 Aber sie ist für **dein django-cms 5.1.1** zu neu.
 
